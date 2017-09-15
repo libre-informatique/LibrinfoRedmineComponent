@@ -29,7 +29,10 @@ class Query
         $users = new Users($this->configuration);
         $users->unsetStatus();
         $users->setGroup(8);
-        print_r($users->getAll());
+        foreach ( $users->getAll() as $user ) {
+            echo $user;
+            print_r($user->toArray());
+        }
     }
     
     private function getValidUsers(array $users)

@@ -4,6 +4,7 @@ namespace Librinfo\RedmineComponent\Repository;
 
 use Librinfo\RedmineComponent\Client;
 use Librinfo\RedmineComponent\Configuration;
+use Librinfo\RedmineComponent\Entity\User;
 
 class Users
 {
@@ -37,14 +38,20 @@ class Users
         $this->client->setMethod();
         $this->client->setRoute($this->route);
         $this->client->setQuerystring($this->getQuerystring());
-        return $this->client->getFullData();
+        
+        $users = [];
+        foreach ( $this->client->getFullData() as $rawUser ) {
+            $users[] = new User($rawUser);
+        }
+        
+        return $users;
     }
     
     public function getOne(int $id): array
     {
         $this->client->setMethod();
         $this->client->setRoute($this->route.'/'.$id);
-        return $this->client->getFullData();
+        return $this->client->getData();
     }
     
     public function unsetGroup(): void
