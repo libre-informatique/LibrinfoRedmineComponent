@@ -1,0 +1,9 @@
+/nbproject
+/.php_cs.cache
+/composer.phar
+/composer.lock
+/vendor/
+/Resources/doc/_build
+/bin/phpunit
+*~
+
