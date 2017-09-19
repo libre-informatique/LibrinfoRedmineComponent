@@ -1,6 +1,6 @@
 <?php
 
-namespace Librinfo\RedmineComponent;
+namespace Librinfo\RedmineComponent\Http;
 
 class Configuration
 {
