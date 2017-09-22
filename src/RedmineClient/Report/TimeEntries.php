@@ -7,4 +7,17 @@ use Librinfo\RedmineComponent\RedmineClient\Traits\TimeEntries as TimeEntriesTra
 class TimeEntries extends Generic
 {
     use TimeEntriesTrait;
+    
+    protected function defineAvailableCriterias(): array
+    {
+        return [
+            'projects',
+            'status',
+            'version',
+            'category',
+            'user',
+            'tracker',
+            'issue',
+        ];
+    }
 }

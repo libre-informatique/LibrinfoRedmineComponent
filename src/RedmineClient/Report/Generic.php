@@ -6,6 +6,8 @@ use Librinfo\RedmineComponent\RedmineClient\Client as RedmineClient;
 use Librinfo\RedmineComponent\Http\Configuration;
 use Librinfo\RedmineComponent\Http\RedmineCookie;
 use Librinfo\RedmineComponent\Exception\PrerequisitesException;
+use Librinfo\RedmineComponent\Quirks\RedmineAuthenticatedCookieGenerator;
+use Librinfo\RedmineComponent\IO\IOInterface;
 
 abstract class Generic extends RedmineClient
 {
@@ -14,21 +16,65 @@ abstract class Generic extends RedmineClient
      */
     private $cookie;
     
+    /**
+     * @var string
+     */
+    private $columns = 'month';
+    
+    /**
+     * @var string
+     */
+    private $criterias = [];
+    
+    /**
+     * @var array
+     **/
+    private $availableCriterias = [];
+    
+    abstract protected function defineAvailableCriterias(): array;
+    
     public function __construct(Configuration $configuration)
     {
         parent::__construct($configuration);
         $this->getClient()->setFormat('csv');
         $this->getClient()->setRoute($this->getClient()->getRoute().'/report');
+        
+        if ( !$configuration->hasCookie() ) {
+            $cookiegen = new RedmineAuthenticatedCookieGenerator($configuration);
+            $cookiegen->generateCookie();
+            $this->cookie = $cookiegen->getCookie();
+        }
+        
+        $this->defineAvailableCriterias();
+        $this->clearCriterias();
     }
     
-    public function setCookie(RedmineCookie $cookie): void
+    public function getAvailableCriterias(): array
     {
-        $this->cookie = $cookie;
-        $this->getClient()->addHeader('Cookie', $this->cookie);
+        return $this->availableCriterias;
     }
-    public function getCookie(RedmineCookie $cookie): RedmineCookie
+    
+    public function getCookieGenerator(): RedmineAuthenticatedCookieGenerator
     {
-        return $this->cookie;
+        return $this->cookiegen;
+    }
+    
+    public function clearCriterias(): void
+    {
+        $this->criterias = [];
+    }
+    public function addCriteria(string $criteria): void
+    {
+        $this->criterias[] = $criteria;
+    }
+    public function getCriterias(): array
+    {
+        return $this->criterias;
+    }
+    
+    public function setColumns(string $columns): void
+    {
+        $this->columns = $columns;
     }
     
     /**
@@ -36,22 +82,13 @@ abstract class Generic extends RedmineClient
      *
      * @return array    representing the report
      */
-    public function get(): array
+    public function get(): IOInterface
     {
-        $this->checkPrerequisites();
-        $this->getClient()->setQuerystring($this->getBuilder().'&columns=month&criteria[]=project');
+        $criterias = 'criteria[]='.implode('&criteria[]=', $this->criterias);
+        
+        $this->getClient()->addCookie($this->cookie);
+        $this->getClient()->setQuerystring($this->getBuilder().'&columns='.$this->columns.'&'.$criterias);
         
         return $this->getClient()->getData();
-    }
-    
-    protected function checkPrerequisites(): bool
-    {
-        parent::checkPrerequisites();
-        
-        if ( !$this->cookie ) {
-            throw new PrerequisitesException(sprintf('[%s] You need to provide a Cookie before any request', self::class));
-        }
-        
-        return true;
     }
 }

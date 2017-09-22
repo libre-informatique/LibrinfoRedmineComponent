@@ -17,23 +17,21 @@ use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Psr7\Response;
 use Librinfo\RedmineComponent\Exception\RouteException;
 use Librinfo\RedmineComponent\Http\Cookie;
+use Librinfo\RedmineComponent\IO\IOInterface;
+use Librinfo\RedmineComponent\IO\Csv;
+use Librinfo\RedmineComponent\IO\Json;
 
 class Client extends GuzzleClient
 {
     /**
-     * @var string
+     * @var Configuration
      **/
-    private $baseUrl;
+    private $configuration;
     
     /**
      * @var string
      **/
     private $route;
-    
-    /**
-     * @var string
-     **/
-    private $key;
     
     /**
      * @var string
@@ -72,8 +70,7 @@ class Client extends GuzzleClient
     
     public function __construct(Configuration $configuration)
     {
-        $this->baseUrl = $configuration->getBaseUrl();
-        $this->setKey($configuration->getKey());
+        $this->configuration = $configuration;
         
         parent::__construct();
     }
@@ -110,11 +107,6 @@ class Client extends GuzzleClient
     {
         $this->route = $route;
     }
-    public function setKey(string $key): void
-    {
-        $this->key = $key;
-        $this->addHeader('X-Redmine-API-Key', $key);
-    }
     public function setQuerystring(string $qs = ''): void
     {
         $this->querystring = $qs;
@@ -126,15 +118,15 @@ class Client extends GuzzleClient
     
     public function getBaseUrl(): string
     {
-        return $this->baseUrl;
+        return $this->configuration->getBaseUrl();
     }
     public function getRoute(): string
     {
         return $this->route;
     }
-    public function getKey(): string
+    public function getKey(): ?string
     {
-        return $this->key;
+        return $this->configuration->getToken();
     }
     public function getQuerystring(): string
     {
@@ -148,9 +140,8 @@ class Client extends GuzzleClient
     public function getParameters(): array
     {
         return [
-            $this->baseUrl,
+            $this->configuration,
             $this->route,
-            $this->key,
             $this->querystring,
             $this->format
         ];
@@ -162,12 +153,11 @@ class Client extends GuzzleClient
             throw new RouteException('Please define a route...');
         }
         
-        return $this->baseUrl
+        return $this->configuration->getBaseUrl()
             . $this->route
             . '.'
             . $this->format
-            . '?key=' . $this->key
-            . '&limit=' . $this->limit
+            . '?limit=' . $this->limit
             . '&offset=' . $this->offset
             . '&'
             . $this->querystring
@@ -178,7 +168,7 @@ class Client extends GuzzleClient
     {
         $this->setOffset($offset);
         
-        $data = $this->getData($options);
+        $data = $this->getData($options)->toArray();
         $results = array_merge($results, $data[$this->getRoute()]);
         
         if ( !$this->isDataPaginated($data) ) {
@@ -211,11 +201,18 @@ class Client extends GuzzleClient
         return sprintf('%s %s', $this->method, $this->getUri());
     }
     
-    public function getData(array $options = []): array
+    public function getData(array $options = []): IOInterface
     {
         // headers
         if ( !isset($option['headers']) ) {
             $options['headers'] = [];
+        }
+        
+        if ( $this->configuration->hasToken() ) {
+            $options['headers']['X-Redmine-API-Key'] = $this->configuration->getToken();
+        }
+        if ( $this->configuration->hasUserAuth() ) {
+            $options['headers']['Authorization'] = $this->configuration->getBasicAuth();
         }
         $options['headers'] = array_merge($options['headers'], $this->headers);
         
@@ -224,24 +221,18 @@ class Client extends GuzzleClient
         
         // result
         $body = $this->lastResponse->getBody();
-        $r = $this->formatData($body);
-        
-        return $r;
+        return $this->formatData($body);
     }
     
-    protected function formatData(string $body): array
+    protected function formatData(string $body): IOInterface
     {
         switch ( $this->format ) {
             case 'json':
-                return json_decode($body, true);
+                return new Json($body, ['assoc' => true]);
             case 'csv':
-                $r = [];
-                foreach ( explode("\n", $body) as $line ) {
-                    $r[] = str_getcsv(iconv('LATIN1', 'UTF8', $line), ';');
-                }
-                return $r;
+                return new Csv($body, ['delimiter' => ';', 'encodings' => ['LATIN1', 'UTF8']]);
             default:
-                return [(string)$body];
+                return new Plain($body);
         }
     }
     
@@ -263,6 +254,15 @@ class Client extends GuzzleClient
     public function addHeader(string $name, string $value): void
     {
         $this->headers[$name] = $value;
+    }
+    /**
+     * @function addCookie    add a cookie header for the request
+     *
+     * @param Cookie $cookie
+     **/
+    public function addCookie(Cookie $cookie): void
+    {
+        $this->addHeader('Cookie', $cookie);
     }
     
     /**

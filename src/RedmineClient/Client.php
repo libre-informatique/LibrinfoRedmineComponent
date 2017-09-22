@@ -101,4 +101,10 @@ abstract class Client
 
         return true;
     }
+    
+    public function setBasicAuth($user, $password): void
+    {
+        $auth = base64_encode(sprintf('%s:%s', $user, $password));
+        $this->client->addHeader('Authorization', sprintf('%s %s', 'Basic', $auth));
+    }
 }

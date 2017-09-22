@@ -60,7 +60,7 @@ abstract class Generic extends RedmineClient
         $this->getClient()->setRoute($this->getRoute().'/'.$id);
         
         $rc = new \ReflectionClass($this->entity);
-        $data = $this->getClient()->getData()[strtolower($rc->getShortName())];
+        $data = $this->getClient()->getData()->toArray()[strtolower($rc->getShortName())];
         
         if ( $data ) {
             return new $this->entity($data);
