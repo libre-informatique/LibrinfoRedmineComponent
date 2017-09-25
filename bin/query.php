@@ -3,12 +3,17 @@
 use Librinfo\RedmineComponent\Http\Client;
 use Librinfo\RedmineComponent\Http\Configuration;
 use Librinfo\RedmineComponent\Http\RedmineCookie;
-use Librinfo\RedmineComponent\Collection\Collection;
+use Librinfo\RedmineComponent\Core\Collection;
+use Librinfo\RedmineComponent\RedmineClient\Repository\Trackers;
+use Librinfo\RedmineComponent\RedmineClient\Repository\IssueStatuses;
+use Librinfo\RedmineComponent\RedmineClient\Repository\Issues;
+use Librinfo\RedmineComponent\RedmineClient\Repository\Projects;
 use Librinfo\RedmineComponent\RedmineClient\Repository\Users;
 use Librinfo\RedmineComponent\RedmineClient\Repository\Groups;
 use Librinfo\RedmineComponent\RedmineClient\Repository\TimeEntries;
 use Librinfo\RedmineComponent\RedmineClient\Report\TimeEntries as ReportTimeEntries;
 use Librinfo\RedmineComponent\Utils\StringConverter;
+use Librinfo\RedmineComponent\Core\Context;
 
 class Query
 {
@@ -29,9 +34,14 @@ class Query
         
         $i = $_SERVER['argv'][2] == 'username' ? 5 : 3;
         if ( isset($_SERVER['argv'][$i]) ) {
-            die('pouet');
-            print_r($this->execCommandLineUri());
+            $this->print($this->execCommandLineUri());
         }
+        
+        $trackers = $this->processTrackers();
+        $issues = $this->processIssues();
+        
+        $issueStatuses = $this->processIssueStatuses();
+        $projects = $this->processProjects();
         
         // groups
         $groups = $this->processGroups();
@@ -51,6 +61,10 @@ class Query
             $user1->get('id'),
             $user2->get('id'),
         ]);
+        
+        // overview
+        $catalog = Context::getInstance()->getCatalog();
+        dump($catalog->getFullCatalog('Librinfo\\RedmineComponent\\Entity\\User'));
     }
     
     private static function createConfiguration(): Configuration
@@ -72,6 +86,53 @@ class Query
         return new Client($this->configuration);
     }
     
+    private function processTrackers(): Collection
+    {
+        $repo = new Trackers($this->configuration);
+        
+        $trackers = $repo->getAll();
+        $this->print($trackers);
+        $this->print($repo->getHttpQuery());
+        
+        return $trackers;
+    }
+    private function processIssueStatuses(): Collection
+    {
+        $repo = new IssueStatuses($this->configuration);
+        
+        //$this->print($repo->getOne(4534));
+        $statuses = $repo->getAll();
+        $this->print($statuses);
+        $this->print($repo->getHttpQuery());
+        
+        return $statuses;
+    }
+    private function processIssues(): Collection
+    {
+        $repo = new Issues($this->configuration);
+        
+        $issues = $repo->getAll(100);
+        $this->print($issues);
+        $this->print($repo->getHttpQuery());
+        $this->print($repo->getOne($issues->getRandom()->get('id')));
+        
+        return $issues;
+    }
+    private function processProjects(): Collection
+    {
+        $repo = new Projects($this->configuration);
+        $repo->setClosed(true);
+        
+        $projects = $repo->getAll();
+        $this->print($projects);
+        $this->print($repo->getHttpQuery());
+        
+        $project = $repo->getOne($projects->getRandom()->get('id'));
+        $this->print($project);
+        
+        return $projects;
+    }
+    
     private function processTimeEntries(array $users): Collection
     {
         $sc = new StringConverter;
@@ -79,15 +140,17 @@ class Query
         
         $repo->setUsers($users);
         $tes = $repo->getAll(50);
-        print_r($tes->toArray(true));
+        $this->print($tes);
         $this->print($repo->getHttpQuery());
+        
+        $this->print($repo->getOne($tes->getRandom()->get('id')));
         
         $repo = new ReportTimeEntries($this->configuration);
         $repo->setUsers($users);
-        $repo->addCriteria('project');
+        $repo->addCriterion('project');
         
         $csv = $repo->get();
-        print_r($csv->toArray());
+        //$this->print($csv->toArray());
         
         return $tes;
     }
@@ -98,7 +161,7 @@ class Query
         $repo->setStatus();
         $repo->setGroup($group);
         $users = $repo->getAll();
-        print_r($users->toArray(true));
+        $this->print($users);
         return $users;
     }
     
@@ -107,7 +170,7 @@ class Query
         $repo = new Users($this->configuration);
         $repo->setStatus();
         $user = $repo->getOne($userId);
-        print_r($user->toArray(true));
+        $this->print($user);
         return $user;
     }
     
@@ -115,7 +178,7 @@ class Query
     {
         $repo = new Groups($this->configuration);
         $groups = $repo->getAll();
-        print_r($groups->toArray(true));
+        $this->print($groups);
         return $groups;
     }
     
@@ -136,9 +199,9 @@ class Query
         return $res->getBody();
     }
     
-    protected function print(string $str, ?string $type = 'INFO'): void
+    protected function print($data, ?string $type = 'INFO'): void
     {
-        echo sprintf("[%s] %s\n", $type, $str);
+        dump(sprintf('[%s]', $type), $data);
     }
     
     private function execCommandLineUri(): array

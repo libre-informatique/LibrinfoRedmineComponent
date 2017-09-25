@@ -19,4 +19,24 @@ class TimeEntry extends Entity
     {
         return $this->hours.' ('.$this->activity['name'].' | '.$this->project['name'].')';
     }
+    
+    protected function hydrateValue($value, ?string $name = NULL)
+    {
+        if ( !$this->isElligibleToSpecialHydration($value, $name) ) {
+            return $value;
+        }
+        
+        switch ( $name ) {
+            case 'project':
+                return Project::create($value);
+            case 'issue':
+                return Issue::create($value);
+            case 'user':
+                return User::create($value);
+            case 'activity':
+                return Activity::create($value);
+        }
+        
+        return $value;
+    }
 }

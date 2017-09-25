@@ -29,9 +29,9 @@ abstract class Generic extends RedmineClient
     /**
      * @var array
      **/
-    private $availableCriterias = [];
+    private $availableCriteria = [];
     
-    abstract protected function defineAvailableCriterias(): array;
+    abstract protected function defineAvailableCriteria(): array;
     
     public function __construct(Configuration $configuration)
     {
@@ -45,13 +45,13 @@ abstract class Generic extends RedmineClient
             $this->cookie = $cookiegen->getCookie();
         }
         
-        $this->defineAvailableCriterias();
-        $this->clearCriterias();
+        $this->defineAvailableCriteria();
+        $this->clearCriteria();
     }
     
-    public function getAvailableCriterias(): array
+    public function getAvailableCriteria(): array
     {
-        return $this->availableCriterias;
+        return $this->availableCriteria;
     }
     
     public function getCookieGenerator(): RedmineAuthenticatedCookieGenerator
@@ -59,15 +59,15 @@ abstract class Generic extends RedmineClient
         return $this->cookiegen;
     }
     
-    public function clearCriterias(): void
+    public function clearCriteria(): void
     {
         $this->criterias = [];
     }
-    public function addCriteria(string $criteria): void
+    public function addCriterion(string $criteria): void
     {
         $this->criterias[] = $criteria;
     }
-    public function getCriterias(): array
+    public function getCriteria(): array
     {
         return $this->criterias;
     }

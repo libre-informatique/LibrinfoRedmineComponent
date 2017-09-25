@@ -12,6 +12,14 @@ class StringConverter
             $string
         );
     }
+    public function fromCamelCaseToSnakeCase(string $string): string
+    {
+        return preg_replace_callback(
+            '/(.?[A-Z])+/',
+            function($m){ return strtolower(strlen($m[0]) == 1 ? $m[0] : $m[0][0].'_'.$m[0][1]); },
+            $string
+        );
+    }
     
     public function removeArrayIndexesFromQuerystring(string $qs): string
     {

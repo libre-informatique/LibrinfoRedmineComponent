@@ -7,8 +7,8 @@ trait Users
     protected function initParameters(): void
     {
         $this->getBuilder()
-            ->addCriteria('group_id')
-            ->addCriteria('status')
+            ->addCriterion('group_id')
+            ->addCriterion('status')
         ;
     }
     protected function getRoute(): string
@@ -27,7 +27,8 @@ trait Users
     {
         return array_shift($this->getBuilder()
             ->setCurrent('group_id')
-            ->getValues());
+            ->getValues())
+        ;
     }
     
     public function setStatus(?int $status = NULL): void
@@ -41,6 +42,7 @@ trait Users
     {
         return array_shift($this->getBuilder()
             ->setCurrent('status')
-            ->getValues());
+            ->getValues())
+        ;
     }
 }

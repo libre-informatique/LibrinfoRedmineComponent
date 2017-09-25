@@ -8,7 +8,7 @@ class TimeEntries extends Generic
 {
     use TimeEntriesTrait;
     
-    protected function defineAvailableCriterias(): array
+    protected function defineAvailableCriteria(): array
     {
         return [
             'projects',

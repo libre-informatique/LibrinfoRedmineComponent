@@ -5,8 +5,9 @@ namespace Librinfo\RedmineComponent\RedmineClient\Repository;
 use Librinfo\RedmineComponent\RedmineClient\Client as RedmineClient;
 use Librinfo\RedmineComponent\Http\Configuration;
 use Librinfo\RedmineComponent\Entity\Entity;
-use Librinfo\RedmineComponent\Collection\Collection;
+use Librinfo\RedmineComponent\Core\Collection;
 use Librinfo\RedmineComponent\Exception\PrerequisitesException;
+use Librinfo\RedmineComponent\Utils\StringConverter;
 
 abstract class Generic extends RedmineClient
 {
@@ -41,7 +42,7 @@ abstract class Generic extends RedmineClient
         
         $entities = new Collection($this->entity);
         foreach ( $this->getClient()->getFullData($max) as $raw ) {
-            $entities[] = new $this->entity($raw);
+            $entities[] = $this->entity::create($raw);
         }
         
         return $entities;
@@ -57,13 +58,15 @@ abstract class Generic extends RedmineClient
     {
         $this->checkPrerequisites();
         
+        $sc = new StringConverter;
         $this->getClient()->setRoute($this->getRoute().'/'.$id);
         
         $rc = new \ReflectionClass($this->entity);
-        $data = $this->getClient()->getData()->toArray()[strtolower($rc->getShortName())];
+        
+        $data = $this->getClient()->getData()->toArray()[$sc->fromCamelCaseToSnakeCase($rc->getShortName())];
         
         if ( $data ) {
-            return new $this->entity($data);
+            return $this->entity::create($data);
         }
         
         return NULL;

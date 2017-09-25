@@ -54,13 +54,13 @@ class Builder
     }
     
     /**
-     * @function addCriteria
+     * @function addCriterion
      *
      * @param string|null $name  if null, the current criteria is taken
      * @return Builder    $this
      * @throw QueryException     if the used criteria is unavailable in this context
      **/
-    public function addCriteria(?string $name = NULL): Builder
+    public function addCriterion(?string $name = NULL): Builder
     {
         $this->setCurrent($name);
         

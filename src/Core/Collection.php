@@ -1,6 +1,6 @@
 <?php
 
-namespace Librinfo\RedmineComponent\Collection;
+namespace Librinfo\RedmineComponent\Core;
 
 use Librinfo\RedmineComponent\Entity\Entity;
 

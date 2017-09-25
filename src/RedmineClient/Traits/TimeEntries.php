@@ -9,7 +9,7 @@ trait TimeEntries
     protected function initParameters(): void
     {
         $this->getBuilder()
-            ->addCriteria('user_id')
+            ->addCriterion('user_id')
         ;
     }
     protected function getRoute(): string
