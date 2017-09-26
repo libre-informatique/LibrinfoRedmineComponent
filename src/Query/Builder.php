@@ -71,6 +71,11 @@ class Builder
         return $this->setCurrent($this->current);
     }
     
+    public function getCriteria(): array
+    {
+        return array_keys($this->values);
+    }
+    
     /**
      * @param ?string name
      * @return Build  $this

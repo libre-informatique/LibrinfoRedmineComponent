@@ -11,6 +11,7 @@ use Librinfo\RedmineComponent\RedmineClient\Repository\Projects;
 use Librinfo\RedmineComponent\RedmineClient\Repository\Users;
 use Librinfo\RedmineComponent\RedmineClient\Repository\Groups;
 use Librinfo\RedmineComponent\RedmineClient\Repository\TimeEntries;
+use Librinfo\RedmineComponent\RedmineClient\Repository\IssueCategories;
 use Librinfo\RedmineComponent\RedmineClient\Report\TimeEntries as ReportTimeEntries;
 use Librinfo\RedmineComponent\Utils\StringConverter;
 use Librinfo\RedmineComponent\Core\Context;
@@ -37,6 +38,9 @@ class Query
             $this->print($this->execCommandLineUri());
         }
         
+        // issue categories
+        $this->processIssueCategories();
+        
         $trackers = $this->processTrackers();
         $issues = $this->processIssues();
         
@@ -62,9 +66,6 @@ class Query
             $user2->get('id'),
         ]);
         
-        // overview
-        $catalog = Context::getInstance()->getCatalog();
-        dump($catalog->getFullCatalog('Librinfo\\RedmineComponent\\Entity\\User'));
     }
     
     private static function createConfiguration(): Configuration
@@ -86,6 +87,20 @@ class Query
         return new Client($this->configuration);
     }
     
+    private function processIssueCategories(): Collection
+    {
+        $repo = new IssueCategories($this->configuration);
+        $repo->getBuilder()
+            ->setCurrent('project_id')
+            ->addValue('libre-informatique')
+        ;
+        
+        $ics = $repo->getAll();
+        $this->print($ics);
+        $this->print($repo->getHttpQuery());
+        
+        return $ics;
+    }
     private function processTrackers(): Collection
     {
         $repo = new Trackers($this->configuration);

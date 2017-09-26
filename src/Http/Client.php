@@ -20,6 +20,7 @@ use Librinfo\RedmineComponent\Http\Cookie;
 use Librinfo\RedmineComponent\IO\IOInterface;
 use Librinfo\RedmineComponent\IO\Csv;
 use Librinfo\RedmineComponent\IO\Json;
+use Librinfo\RedmineComponent\Query\Builder;
 
 class Client extends GuzzleClient
 {
@@ -103,13 +104,55 @@ class Client extends GuzzleClient
     {
         $this->baseUrl = $baseUrl;
     }
+    
+    /**
+     * @param string $route   can use /project/:project_id format, to replace :project_id by a single value as given to a Builder provided to self::setQuerystring()
+     **/
     public function setRoute(string $route): void
     {
         $this->route = $route;
     }
-    public function setQuerystring(string $qs = ''): void
+    
+    /**
+     * Function setQuerystring()
+     *
+     * If the $qs param is a Builder:
+     * tries to replace xyz/:name_id/ by xyz/12 if a value "name_id" is set to 12 (one value strict) in the Builder
+     * tries to replace xyz/:name_id/ by "" if 0 or more than 1 "name_id" is set in the Builder
+     *
+     * @param Builder|string   $qs
+     **/
+    public function setQuerystring($qs): void
     {
-        $this->querystring = $qs;
+        $this->querystring = (string)$qs;
+        
+        if ( ! $qs instanceof Builder ) {
+            return;
+        }
+        $builder = $qs;
+        
+        foreach ( $builder->getCriteria() as $criterion ) {
+            $values = $builder
+                ->setCurrent($criterion)
+                ->getValues()
+            ;
+            
+            preg_match(sprintf('/(\w+\/(:%s)\/)/', $criterion), $this->route, $matches);
+            
+            // if nothing matches
+            if ( !$matches ) {
+                continue;
+            }
+            
+            // if values are more than one, or nothing given, clean up the URL
+            if ( count($values) != 1 ) {
+                $this->route = str_replace($matches[1], '', $this->route);
+                continue;
+            }
+            
+            // if there is a value to substitute
+            $this->route = str_replace($matches[2], $values[0], $this->route);
+        }
     }
     public function setFormat(string $format): void
     {
@@ -169,7 +212,7 @@ class Client extends GuzzleClient
         $this->setOffset($offset);
         
         $data = $this->getData($options)->toArray();
-        $results = array_merge($results, $data[$this->getRoute()]);
+        $results = array_merge($results, $data[$this->getDataKey()]);
         
         if ( !$this->isDataPaginated($data) ) {
             return $results;
@@ -297,5 +340,10 @@ class Client extends GuzzleClient
     public function getLastResponse(): Response
     {
         return $this->lastResponse;
+    }
+    
+    private function getDataKey(): string
+    {
+        return preg_replace('!^(.*/)!', '', $this->route);
     }
 }
