@@ -1,4 +1,7 @@
 {
+    "name": "libre-informatique/librinfo-redmine-component",
+    "type": "library",
+    "version": "dev-master",
     "require": {
         "guzzlehttp/guzzle": "^6.3",
         "symfony/var-dumper": "dev-master",
