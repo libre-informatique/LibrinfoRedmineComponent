@@ -15,7 +15,7 @@ abstract class Generic extends RedmineClient
      * @var string base class to play with
      */
     private $entity;
-    
+
     /**
      * @param Configuration $configuration
      */
@@ -24,9 +24,9 @@ abstract class Generic extends RedmineClient
         parent::__construct($configuration);
         $this->entity = $this->getEntityClass();
     }
-    
+
     protected abstract function getEntityClass(): string;
-    
+
     /**
      * @function getAll  get all data from a pagined request
      *
@@ -36,18 +36,18 @@ abstract class Generic extends RedmineClient
     public function getAll(int $max = -1, int $page = 100): Collection
     {
         $this->checkPrerequisites();
-        
+
         $this->getClient()->setLimit(100);
         $this->getClient()->setQuerystring($this->getBuilder());
-        
+
         $entities = new Collection($this->entity);
         foreach ( $this->getClient()->getFullData($max) as $raw ) {
             $entities[] = $this->entity::create($raw);
         }
-        
+
         return $entities;
     }
-    
+
     /**
      * @function getOne  get back one entity
      *
@@ -57,28 +57,28 @@ abstract class Generic extends RedmineClient
     public function getOne(int $id): ?Entity
     {
         $this->checkPrerequisites();
-        
+
         $sc = new StringConverter;
         $this->getClient()->setRoute($this->getRoute().'/'.$id);
-        
+
         $rc = new \ReflectionClass($this->entity);
-        
+
         $data = $this->getClient()->getData()->toArray()[$sc->fromCamelCaseToSnakeCase($rc->getShortName())];
-        
+
         if ( $data ) {
             return $this->entity::create($data);
         }
-        
+
         return NULL;
     }
-    
+
     protected function checkPrerequisites(): bool
     {
         parent::checkPrerequisites();
         if ( !$this->entity ) {
             throw new PrerequisitesException('You need to define an entity prior to any request');
         }
-        
+
         return true;
     }
 }
