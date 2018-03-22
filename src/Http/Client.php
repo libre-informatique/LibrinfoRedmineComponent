@@ -138,7 +138,9 @@ class Client extends GuzzleClient
             ;
             $criterion = str_replace('[', '\[', $criterion);
             $criterion = str_replace(']', '\]', $criterion);
+
             preg_match(sprintf('#(\w+\/(:%s)\/)#', $criterion), $this->route, $matches);
+
 
             // if nothing matches
             if ( !$matches ) {
